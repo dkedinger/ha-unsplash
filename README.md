@@ -19,7 +19,7 @@ A Home Assistant custom integration that turns any public [Unsplash](https://uns
 
 1. Open HACS in Home Assistant
 2. Click the **⋮** menu → **Custom repositories**
-3. Add `https://github.com/kedinger/ha-unsplash` as an **Integration**
+3. Add `https://github.com/dkedinger/ha-unsplash` as an **Integration**
 4. Find "Unsplash" in the HACS list and install
 5. Restart Home Assistant
 
