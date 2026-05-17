@@ -1,7 +1,7 @@
 # Unsplash for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kedinger&repository=ha-unsplash&category=integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=dkedinger&repository=ha-unsplash&category=integration)
 
 A Home Assistant custom integration that turns any public [Unsplash](https://unsplash.com) collection into a rotating `image` entity. Use the entity as a dashboard background, a [WallPanel](https://github.com/j-a-n/lovelace-wallpanel) slideshow source, a [View Assist](https://dinki.github.io/View-Assist/) background, or anywhere else an `image` entity is supported.
 
