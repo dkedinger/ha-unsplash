@@ -86,7 +86,7 @@ class UnsplashConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> UnsplashOptionsFlow:
-        return UnsplashOptionsFlow(config_entry)
+        return UnsplashOptionsFlow()
 
 
 class UnsplashOptionsFlow(config_entries.OptionsFlow):
@@ -95,10 +95,14 @@ class UnsplashOptionsFlow(config_entries.OptionsFlow):
     Each mutating step calls _save() once with the resulting merged options
     so the entry reloads with the new state. Users re-enter the options flow
     for further changes.
+
+    `self.config_entry` is injected by Home Assistant after instantiation. In
+    recent HA versions (2024.11+) it's a read-only property on the base class,
+    so we must NOT take it as a constructor arg or assign to it ourselves —
+    doing so raises AttributeError and HA surfaces it as a 500.
     """
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        self.config_entry = config_entry
+    def __init__(self) -> None:
         # Remembered across steps within a single options-flow session — only
         # used by edit_collection (init → pick which → fill the form).
         self._editing_collection_id: str | None = None
