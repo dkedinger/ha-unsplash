@@ -1,0 +1,19 @@
+refresh:
+  name: Refresh image
+  description: >-
+    Force one or more Unsplash image entities to immediately fetch a fresh
+    random photo from their collection, bypassing the next scheduled refresh.
+    If no entity is specified, all Unsplash image entities will refresh.
+  fields:
+    entity_id:
+      name: Entity
+      description: >-
+        Specific Unsplash image entity (or list of entities) to refresh.
+        Omit to refresh every Unsplash image entity.
+      example: image.unsplash_morning_blue
+      required: false
+      selector:
+        entity:
+          integration: unsplash
+          domain: image
+          multiple: true

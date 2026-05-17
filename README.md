@@ -1,5 +1,8 @@
 # Unsplash for Home Assistant
 
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kedinger&repository=ha-unsplash&category=integration)
+
 A Home Assistant custom integration that turns any public [Unsplash](https://unsplash.com) collection into a rotating `image` entity. Use the entity as a dashboard background, a [WallPanel](https://github.com/j-a-n/lovelace-wallpanel) slideshow source, a [View Assist](https://dinki.github.io/View-Assist/) background, or anywhere else an `image` entity is supported.
 
 > Unsplash deprecated `source.unsplash.com` in late 2021 and it's been intermittent since 2024. This integration uses the official Unsplash API instead — stable, supported, and rate-limit aware.
@@ -8,10 +11,12 @@ A Home Assistant custom integration that turns any public [Unsplash](https://uns
 
 - Configure once with your free Unsplash Access Key
 - Add as many collections as you want — each becomes its own `image` entity
-- Rotates to a new random photo on a configurable interval (default: every 15 minutes)
+- **Per-collection refresh intervals** — fast-rotating photo streams alongside slow-rotating art collections, all under one integration
+- **Per-collection orientation** — set landscape, portrait, or squarish on a per-collection basis (or inherit the global default)
+- **`unsplash.refresh` service** — trigger an immediate photo change from automations, scripts, or Developer Tools
 - Exposes photographer name and profile URL as state attributes (required for Unsplash attribution)
 - Fires Unsplash's per-photo download-tracking endpoint automatically — keeps you compliant with the [API Guidelines](https://help.unsplash.com/en/articles/2511258)
-- Filter by orientation (landscape, portrait, squarish)
+- Diagnostics support — download config + last-state JSON straight from the integration card
 
 ## Installation
 
@@ -54,10 +59,38 @@ Each collection creates a single image entity, e.g. `image.unsplash_morning_blue
 
 ### 4. Tune refresh settings (optional)
 
-From the same Configure menu, choose **Refresh settings** to change:
+From the same Configure menu:
 
-- **Refresh interval** — how often each entity swaps to a new photo (minimum 60 seconds)
-- **Orientation** — landscape, portrait, or squarish
+- **Default refresh settings** — sets per-integration defaults (refresh interval, orientation) that apply to any collection without its own override. Default is 900 seconds (15 minutes), landscape.
+- **Edit a collection** — set per-collection overrides for refresh interval and orientation. Use `-1` for the interval or `inherit` for the orientation to fall back to the defaults above.
+
+For example, you might want family photos to rotate every 5 minutes but a wallpaper art collection to rotate every 2 hours — each collection can have its own schedule.
+
+### 5. Force an immediate refresh
+
+Call the `unsplash.refresh` service from automations, scripts, or Developer Tools:
+
+```yaml
+# Refresh a single entity
+action: unsplash.refresh
+data:
+  entity_id: image.unsplash_my_collection
+
+# Refresh every Unsplash image entity (no target = all of them)
+action: unsplash.refresh
+```
+
+Useful for "new photo at sunrise" automations, or as a button on a dashboard:
+
+```yaml
+type: button
+name: New photo
+tap_action:
+  action: call-service
+  service: unsplash.refresh
+  service_data:
+    entity_id: image.unsplash_my_collection
+```
 
 ## Using the image entity
 

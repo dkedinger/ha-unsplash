@@ -24,16 +24,29 @@
         "title": "Unsplash",
         "menu_options": {
           "add_collection": "Add a collection",
+          "edit_collection": "Edit a collection",
           "remove_collection": "Remove a collection",
-          "settings": "Refresh settings"
+          "defaults": "Default refresh settings"
         }
       },
       "add_collection": {
         "title": "Add an Unsplash collection",
-        "description": "Enter a public Unsplash Collection ID. The ID is the number at the end of the collection URL \u2014 for example, `8975107` from `https://unsplash.com/collections/8975107`.\n\nLeave the display name blank to use the collection's title from Unsplash.",
+        "description": "Enter a public Unsplash Collection ID. The ID is the number at the end of the collection URL \u2014 e.g. `8975107` from `https://unsplash.com/collections/8975107`.\n\nLeave the display name blank to use the collection's title from Unsplash.\n\n**Refresh interval** and **orientation** are optional per-collection overrides. Leave them at \u201cInherit\u201d to use the integration defaults ({default_interval}s, {default_orientation}). Use `-1` in the interval to inherit.",
         "data": {
           "collection_id": "Collection ID",
-          "collection_name": "Display name (optional)"
+          "collection_name": "Display name (optional)",
+          "update_interval": "Refresh interval in seconds (-1 = inherit default)",
+          "orientation": "Photo orientation"
+        }
+      },
+      "edit_collection": {
+        "title": "Edit collection",
+        "description": "Editing **{collection_name}** (`{collection_id}`).\n\nInteger refresh interval in seconds (minimum 60), or `-1` to inherit the integration default ({default_interval}s).\n\nOrientation \u201cinherit\u201d uses the integration default ({default_orientation}).",
+        "data": {
+          "collection_id": "Collection",
+          "collection_name": "Display name",
+          "update_interval": "Refresh interval in seconds (-1 = inherit)",
+          "orientation": "Photo orientation"
         }
       },
       "remove_collection": {
@@ -42,12 +55,12 @@
           "collection_id": "Collection to remove"
         }
       },
-      "settings": {
-        "title": "Refresh settings",
-        "description": "How often each collection's image entity should swap to a new random photo. Minimum 60 seconds \u2014 be mindful of your Unsplash rate limit (50/hour on demo apps, 5000/hour on approved production apps).",
+      "defaults": {
+        "title": "Default refresh settings",
+        "description": "These defaults apply to every collection unless that collection has its own override.\n\nMinimum 60 seconds \u2014 be mindful of your Unsplash rate limit (50/hour on demo apps, 5000/hour on approved production apps).",
         "data": {
-          "update_interval": "Refresh interval (seconds)",
-          "orientation": "Preferred photo orientation"
+          "update_interval": "Default refresh interval (seconds)",
+          "orientation": "Default photo orientation"
         }
       }
     },
@@ -57,7 +70,20 @@
       "duplicate": "That collection is already added."
     },
     "abort": {
-      "no_collections": "No collections are configured yet. Use 'Add a collection' from the main options menu."
+      "no_collections": "No collections are configured yet. Use \u201cAdd a collection\u201d from the main options menu first.",
+      "collection_not_found": "That collection no longer exists in this integration."
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Refresh image",
+      "description": "Force one or more Unsplash image entities to fetch a fresh random photo now.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity",
+          "description": "Specific entity (or list) to refresh. Omit to refresh every Unsplash image entity."
+        }
+      }
     }
   }
 }
