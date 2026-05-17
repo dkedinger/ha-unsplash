@@ -22,6 +22,9 @@ ORIENTATIONS: Final = ["landscape", "portrait", "squarish"]
 # Unsplash API
 API_BASE: Final = "https://api.unsplash.com"
 
+# Services
+SERVICE_REFRESH: Final = "refresh"
+
 # Entity extra_state_attributes
 ATTR_PHOTOGRAPHER: Final = "photographer"
 ATTR_PHOTOGRAPHER_URL: Final = "photographer_url"
