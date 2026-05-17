@@ -1,0 +1,13 @@
+{
+  "domain": "unsplash",
+  "name": "Unsplash",
+  "codeowners": ["@kedinger"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/kedinger/ha-unsplash",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/kedinger/ha-unsplash/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

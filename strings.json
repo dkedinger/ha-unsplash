@@ -1,0 +1,63 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Unsplash",
+        "description": "Enter your Unsplash **Access Key**.\n\nCreate one for free at {url} (Register \u2192 New Application). Use the Access Key, not the Secret Key.",
+        "data": {
+          "access_key": "Access Key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Unsplash rejected that access key.",
+      "rate_limit": "Unsplash returned a rate-limit error. Wait an hour and try again, or upgrade your Unsplash application to production tier.",
+      "cannot_connect": "Could not reach the Unsplash API. Check your internet connection and try again."
+    },
+    "abort": {
+      "already_configured": "An Unsplash integration is already configured with this access key."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Unsplash",
+        "menu_options": {
+          "add_collection": "Add a collection",
+          "remove_collection": "Remove a collection",
+          "settings": "Refresh settings"
+        }
+      },
+      "add_collection": {
+        "title": "Add an Unsplash collection",
+        "description": "Enter a public Unsplash Collection ID. The ID is the number at the end of the collection URL \u2014 for example, `8975107` from `https://unsplash.com/collections/8975107`.\n\nLeave the display name blank to use the collection's title from Unsplash.",
+        "data": {
+          "collection_id": "Collection ID",
+          "collection_name": "Display name (optional)"
+        }
+      },
+      "remove_collection": {
+        "title": "Remove a collection",
+        "data": {
+          "collection_id": "Collection to remove"
+        }
+      },
+      "settings": {
+        "title": "Refresh settings",
+        "description": "How often each collection's image entity should swap to a new random photo. Minimum 60 seconds \u2014 be mindful of your Unsplash rate limit (50/hour on demo apps, 5000/hour on approved production apps).",
+        "data": {
+          "update_interval": "Refresh interval (seconds)",
+          "orientation": "Preferred photo orientation"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Unsplash rejected the access key. The key may have been revoked \u2014 reconfigure the integration.",
+      "collection_not_found": "That collection couldn't be found. Make sure the ID is correct and the collection is public.",
+      "duplicate": "That collection is already added."
+    },
+    "abort": {
+      "no_collections": "No collections are configured yet. Use 'Add a collection' from the main options menu."
+    }
+  }
+}
