@@ -8,7 +8,7 @@ The code in this repo already satisfies all the code-side HACS requirements (`cu
 
 - [ ] Replace `kedinger` placeholder in `custom_components/unsplash/manifest.json` with your actual GitHub username if different — three references (`codeowners`, `documentation`, `issue_tracker`)
 - [ ] Update the same in `README.md` install section, `LICENSE` copyright line, and any other `kedinger` references
-- [ ] Verify `manifest.json` `version` matches `CHANGELOG.md` (currently `0.1.0`)
+- [ ] Verify `manifest.json` `version` matches `CHANGELOG.md` (currently `0.3.0`)
 
 ## On GitHub
 

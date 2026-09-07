@@ -6,9 +6,10 @@ import logging
 from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import UnsplashApi, UnsplashApiError
+from .api import UnsplashApi, UnsplashApiError, UnsplashAuthError
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,6 +44,12 @@ class UnsplashCollectionCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 collection_id=self.collection_id,
                 orientation=self.orientation,
             )
+        except UnsplashAuthError as err:
+            # Revoked / rotated key — hand the user a reauth flow instead of
+            # retrying with a key that will never work.
+            raise ConfigEntryAuthFailed(
+                f"Unsplash rejected the access key: {err}"
+            ) from err
         except UnsplashApiError as err:
             raise UpdateFailed(f"Unsplash API error: {err}") from err
 

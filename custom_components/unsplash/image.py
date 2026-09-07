@@ -1,7 +1,6 @@
 """Image entity platform for Unsplash."""
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from homeassistant.components.image import ImageEntity
@@ -24,8 +23,6 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import UnsplashCollectionCoordinator
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -56,6 +53,7 @@ class UnsplashCollectionImage(
     """
 
     _attr_has_entity_name = True
+    _attr_name = None
     _attr_content_type = "image/jpeg"
 
     def __init__(
@@ -68,8 +66,6 @@ class UnsplashCollectionImage(
         ImageEntity.__init__(self, hass)
         self._entry_id = entry.entry_id
         self._attr_unique_id = f"{entry.entry_id}_{coordinator.collection_id}"
-        self._attr_name = coordinator.collection_name
-        self._current_url: str | None = None
         self._update_image_state()
 
     @property
@@ -98,13 +94,13 @@ class UnsplashCollectionImage(
         # `regular` is ~1080px wide — good balance for tablet/desktop dashboards.
         # `full` is the raw uploaded size (often huge); we keep it as an attribute.
         new_url = urls.get("regular") or urls.get("full")
-        if new_url and new_url != self._current_url:
-            self._current_url = new_url
+        if new_url and new_url != self._attr_image_url:
+            self._attr_image_url = new_url
+            # ImageEntity caches the fetched bytes in _cached_image and never
+            # invalidates them itself — without this the entity keeps serving
+            # the first photo forever, no matter how often the URL rotates.
+            self._cached_image = None
             self._attr_image_last_updated = dt_util.utcnow()
-
-    @property
-    def image_url(self) -> str | None:
-        return self._current_url
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
