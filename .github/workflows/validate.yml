@@ -25,3 +25,7 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # Brand assets live in home-assistant/brands, not this repo. Drop this
+          # line once the brands PR for `unsplash` is merged (see
+          # HACS_CHECKLIST.md) so the check starts enforcing it.
+          ignore: brands

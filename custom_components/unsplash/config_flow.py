@@ -245,6 +245,9 @@ class UnsplashOptionsFlow(config_entries.OptionsFlow):
             ),
             errors=errors,
             description_placeholders={
+                # hassfest rejects literal URLs inside translation strings —
+                # they have to arrive as placeholders.
+                "example_url": "https://unsplash.com/collections/8975107",
                 "default_interval": str(default_interval),
                 "default_orientation": default_orientation,
             },

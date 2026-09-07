@@ -40,7 +40,7 @@
       },
       "add_collection": {
         "title": "Add an Unsplash collection",
-        "description": "Enter a public Unsplash Collection ID. The ID is the number at the end of the collection URL — e.g. `8975107` from `https://unsplash.com/collections/8975107`.\n\nLeave the display name blank to use the collection's title from Unsplash.\n\n**Refresh interval** and **orientation** are optional per-collection overrides. Leave them at “Inherit” to use the integration defaults ({default_interval}s, {default_orientation}). Use `-1` in the interval to inherit.",
+        "description": "Enter a public Unsplash Collection ID. The ID is the number at the end of the collection URL — e.g. `8975107` from `{example_url}`.\n\nLeave the display name blank to use the collection's title from Unsplash.\n\n**Refresh interval** and **orientation** are optional per-collection overrides. Leave them at “Inherit” to use the integration defaults ({default_interval}s, {default_orientation}). Use `-1` in the interval to inherit.",
         "data": {
           "collection_id": "Collection ID",
           "collection_name": "Display name (optional)",
