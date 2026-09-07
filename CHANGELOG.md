@@ -5,6 +5,48 @@ All notable changes to this project are documented here. This project follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-06
+
+### Fixed
+- **UI showed raw translation keys** — the options menu, form labels, and abort
+  messages rendered as `collection_id`, `no_collections`, and blank menu rows.
+  Home Assistant only reads `translations/en.json` at runtime; `strings.json` is
+  a build-time source for core integrations and is never loaded for custom ones.
+  `strings.json` remains the source of truth and is mirrored to
+  `translations/en.json`.
+- **Photos never actually changed** — `ImageEntity` caches fetched bytes in
+  `_cached_image` and never invalidates them itself, so the entity kept serving
+  the first photo forever even as the coordinator rotated the URL. The cache is
+  now cleared whenever a new photo URL arrives.
+- **Broken reauthentication** — a revoked or rotated access key raised
+  `ConfigEntryAuthFailed` with no `async_step_reauth` to handle it, leaving the
+  entry unusable. Added a reauth flow that validates and stores a new key.
+- **Entry setup was all-or-nothing** — one unreachable collection (deleted,
+  private, or with no photo matching the orientation) failed the whole entry and
+  put every collection on Home Assistant's retry backoff. Collections now refresh
+  concurrently and a failing one leaves only its own entity unavailable.
+- **Doubled entity names** — with `has_entity_name` set, the entity also carried
+  the collection name, producing names like "Unsplash: Morning Blue Morning Blue".
+- **`unsplash.refresh` could refresh the wrong entry** — entities were matched by
+  collection ID suffix, so two entries (two access keys) sharing a collection both
+  refreshed, costing an extra rate-limited request. Matching is now exact.
+- **Crash in the options flow** — the "edit collection" step could dereference a
+  missing submission; it now falls back to the collection picker.
+- Hitting the Unsplash rate limit while adding a collection reported "that
+  collection couldn't be found"; it now reports the rate limit.
+- `async_unload_entry` no longer assumes `hass.data[DOMAIN]` exists.
+
+### Changed
+- Minimum Home Assistant version raised to **2024.11.0**. The options flow relies
+  on `self.config_entry` being injected by Home Assistant, which only happens from
+  2024.11 — on older releases opening options raised a 500.
+- Removed the access-key validation call from entry setup. It cost one
+  rate-limited request per setup and per options change (every change reloads the
+  entry); the first coordinator refresh exercises the key instead and maps an auth
+  failure to a reauth flow.
+- Added a GitHub Actions workflow running hassfest and HACS validation, and an
+  MIT `LICENSE` file that `README.md` already referenced.
+
 ## [0.2.0] - 2026-05-16
 
 ### Added

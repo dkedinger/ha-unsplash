@@ -1,6 +1,7 @@
 """The Unsplash integration."""
 from __future__ import annotations
 
+import asyncio
 import logging
 
 import voluptuous as vol
@@ -8,11 +9,10 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_ENTITY_ID, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import UnsplashApi, UnsplashApiError, UnsplashAuthError
+from .api import UnsplashApi
 from .const import (
     CONF_ACCESS_KEY,
     CONF_COLLECTION_ID,
@@ -43,14 +43,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     session = async_get_clientsession(hass)
     api = UnsplashApi(entry.data[CONF_ACCESS_KEY], session)
 
-    # Validate the key up front. Auth errors surface a re-auth flow; transient
-    # errors let HA retry the setup later.
-    try:
-        await api.async_validate()
-    except UnsplashAuthError as err:
-        raise ConfigEntryAuthFailed("Invalid Unsplash access key") from err
-    except UnsplashApiError as err:
-        raise ConfigEntryNotReady(f"Cannot reach Unsplash: {err}") from err
+    # No separate key validation here: it would cost one rate-limited request
+    # per setup *and* per options change (every change reloads the entry). The
+    # first coordinator refresh exercises the key, and the coordinator maps an
+    # auth failure to ConfigEntryAuthFailed, which starts the reauth flow.
 
     # Per-entry defaults (used when a collection doesn't override).
     default_interval = entry.options.get(
@@ -73,10 +69,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             orientation=orientation,
             update_interval=interval,
         )
-        # Inline first refresh so the entity has data when added.
-        # On failure the entity still gets created and retries on schedule.
-        await coord.async_config_entry_first_refresh()
         coordinators[coll[CONF_COLLECTION_ID]] = coord
+
+    # Refresh every collection concurrently so setup doesn't serialize N HTTP
+    # calls. async_refresh (not async_config_entry_first_refresh) is deliberate:
+    # a single bad collection — deleted, private, or with no photo matching the
+    # orientation — leaves only its own entity unavailable instead of failing
+    # the whole entry and retrying every collection on HA's backoff timer.
+    if coordinators:
+        await asyncio.gather(
+            *(coord.async_refresh() for coord in coordinators.values())
+        )
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "api": api,
@@ -98,10 +101,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
+        domain_data = hass.data.get(DOMAIN, {})
+        domain_data.pop(entry.entry_id, None)
 
         # Last entry going away — remove the service so it doesn't linger.
-        if not hass.data[DOMAIN]:
+        if not domain_data:
             hass.services.async_remove(DOMAIN, SERVICE_REFRESH)
 
     return unload_ok
@@ -126,25 +130,28 @@ def _async_register_services(hass: HomeAssistant) -> None:
         # iteration over hass.data (which can mutate on reloads).
         to_refresh: list[UnsplashCollectionCoordinator] = []
 
-        for entry_data in hass.data.get(DOMAIN, {}).values():
+        # Unique IDs are "{entry_id}_{collection_id}", so resolve the requested
+        # entity_ids to those exact unique IDs first. Matching on the collection
+        # ID alone would also refresh a second account's entry that happens to
+        # use the same collection — an extra rate-limited request each time.
+        target_unique_ids: set[str] | None = None
+        if target_entity_ids is not None:
+            target_unique_ids = set()
+            for ent_id in target_entity_ids:
+                reg_entry = ent_reg.async_get(ent_id)
+                if reg_entry and reg_entry.platform == DOMAIN:
+                    target_unique_ids.add(reg_entry.unique_id)
+
+        for entry_id, entry_data in hass.data.get(DOMAIN, {}).items():
             coordinators: dict[str, UnsplashCollectionCoordinator] = entry_data[
                 "coordinators"
             ]
-            for coord in coordinators.values():
-                if target_entity_ids is None:
-                    # No targets supplied — refresh everything.
+            for collection_id, coord in coordinators.items():
+                if (
+                    target_unique_ids is None  # No targets supplied — refresh all.
+                    or f"{entry_id}_{collection_id}" in target_unique_ids
+                ):
                     to_refresh.append(coord)
-                    continue
-
-                # Match each requested entity_id back to its coordinator via
-                # the entity registry. Unique IDs are "{entry_id}_{coll_id}".
-                for ent_id in target_entity_ids:
-                    reg_entry = ent_reg.async_get(ent_id)
-                    if not reg_entry or reg_entry.platform != DOMAIN:
-                        continue
-                    if reg_entry.unique_id.endswith(f"_{coord.collection_id}"):
-                        to_refresh.append(coord)
-                        break
 
         for coord in to_refresh:
             await coord.async_request_refresh()

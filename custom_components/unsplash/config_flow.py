@@ -1,6 +1,7 @@
 """Config and Options flows for the Unsplash integration."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -81,6 +82,57 @@ class UnsplashConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={"url": "https://unsplash.com/developers"},
         )
 
+    async def async_step_reauth(
+        self, entry_data: Mapping[str, Any]
+    ) -> FlowResult:
+        """Access key was rejected at runtime — ask for a new one."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        errors: dict[str, str] = {}
+        entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+        if entry is None:
+            return self.async_abort(reason="reauth_failed")
+
+        if user_input is not None:
+            access_key = user_input[CONF_ACCESS_KEY].strip()
+            api = UnsplashApi(access_key, async_get_clientsession(self.hass))
+            try:
+                await api.async_validate()
+            except UnsplashAuthError:
+                errors["base"] = "invalid_auth"
+            except UnsplashRateLimitError:
+                errors["base"] = "rate_limit"
+            except UnsplashApiError:
+                errors["base"] = "cannot_connect"
+            else:
+                # unique_id is derived from the key, so a replacement key
+                # changes it — make sure it doesn't collide with another entry.
+                new_unique_id = f"unsplash_{access_key[:8]}"
+                if any(
+                    other.entry_id != entry.entry_id
+                    and other.unique_id == new_unique_id
+                    for other in self.hass.config_entries.async_entries(DOMAIN)
+                ):
+                    return self.async_abort(reason="already_configured")
+
+                self.hass.config_entries.async_update_entry(
+                    entry,
+                    data={**entry.data, CONF_ACCESS_KEY: access_key},
+                    unique_id=new_unique_id,
+                )
+                await self.hass.config_entries.async_reload(entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema({vol.Required(CONF_ACCESS_KEY): str}),
+            errors=errors,
+            description_placeholders={"url": "https://unsplash.com/developers"},
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(
@@ -138,6 +190,10 @@ class UnsplashOptionsFlow(config_entries.OptionsFlow):
                 collection_data = await api.async_get_collection(collection_id)
             except UnsplashAuthError:
                 errors["base"] = "invalid_auth"
+            except UnsplashRateLimitError:
+                # Subclass of UnsplashApiError — catch it first, otherwise a
+                # rate limit is reported as "collection not found".
+                errors["base"] = "rate_limit"
             except UnsplashApiError:
                 errors[CONF_COLLECTION_ID] = "collection_not_found"
             else:
@@ -269,6 +325,12 @@ class UnsplashOptionsFlow(config_entries.OptionsFlow):
             )
 
         # Form was submitted — persist the edits.
+        if user_input is None:
+            # Re-entered the step without a submission (shouldn't normally
+            # happen); fall back to the picker instead of crashing.
+            self._editing_collection_id = None
+            return await self.async_step_edit_collection()
+
         target_id = self._editing_collection_id
         updated: list[dict[str, Any]] = []
         for c in current:
